@@ -6,4 +6,5 @@ expense_map = {"Groceries": ["MART", "TARGET", "JEWEL OSCO", "WALGREENS", "Marke
                                "Annapurna", "Starbucks", "Eggholic"],
                "Car": ["Thornton", "STATE FARM", "Avis"],
                "Travel": ["Frontier", "Etihad", "American", "United", "Ventra", "Metra", "Uber",
-                          "Spothero"]}
+                          "Spothero"],
+               "Home": ["Home Depot", "Lowe", "Menards", "Woodlore Estates"]}
