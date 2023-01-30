@@ -1,7 +1,11 @@
 .idea/
+.DS_Store
 
 # dotenv
 .env
+
+# stmts
+stmt/
 
 # virtualenv
 .venv
