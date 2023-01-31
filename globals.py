@@ -5,7 +5,7 @@ expense_map = {"Groceries": ["MART", "TARGET", "JEWEL OSCO", "WALGREENS", "Marke
                "Entertainment": ["Peacock", "AMC", "Netflix", "Hulu", "Bowlero"],
                "Restaurants": ["Ramen", "Biryani", "Pizza", "Taco", "Chipotle", "Subway",
                                "Annapurna", "Starbucks", "Eggholic", "Portillos", "CULVERS",
-                               "El Sombrero"],
+                               "El Sombrero", "Nando", "KALEIDOSCOOPS"],
                "Car": ["Thornton", "STATE FARM", "Avis"],
                "Travel": ["Frontier", "Etihad", "American", "United", "Ventra", "Metra", "Uber",
                           "Spothero", "Booking"],

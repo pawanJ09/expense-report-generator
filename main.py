@@ -1,6 +1,7 @@
 from PyPDF2.errors import PdfReadError
 from PyPDF2._reader import PdfReader
 from globals import expense_map
+import re
 
 txn_start = '$ Amount'
 txn_end = 'Total fees charged'
@@ -46,15 +47,20 @@ def categorize_transactions(transactions: list):
     expenses = dict()
     # expenses_new = dict()
     for txn in transactions:
-        amount = txn.split(" ")[-1].replace(',', '')
-        if 'Payment Thank You' not in txn and txn != '' and '-' not in amount:
+        # Filter transactions which have a date and no negatives i.e. payments
+        if re.findall("\d+\/\d+", txn) and not re.findall("-\d+\.\d+", txn) \
+                and (re.findall("\d+\.\d+", txn) or re.findall("\.\d+", txn)):
+            amount = re.findall("\d+\.\d+", txn)
+            if not amount:
+                amount = re.findall("\.\d+", txn)
             for expense_category, expense_values in expense_map.items():
                 if any(val.lower() in txn.lower() for val in expense_values):
                     if expense_category not in expenses:
                         # expenses_new[expense_category] = list()
-                        expenses[expense_category] = float(amount)
+                        expenses[expense_category] = round(float(amount[0]), 2)
                     else:
-                        expenses[expense_category] = expenses[expense_category] + float(amount)
+                        expenses[expense_category] = round(expenses[expense_category]
+                                                           + float(amount[0]), 2)
                     # expenses_new[expense_category].append(amount)
                     break
     print(expenses)
@@ -62,7 +68,7 @@ def categorize_transactions(transactions: list):
 
 
 if __name__ == '__main__':
-    input_file = 'stmt/20221124-statements-2577-.pdf'
+    input_file = 'stmt/20221224-statements-2577-.pdf'
     pdf_reader = generate_pdf_reader(input_file)
     cc_transactions = parse_transactions(pdf_reader)
     categorize_transactions(cc_transactions)
