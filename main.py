@@ -1,11 +1,12 @@
 from PyPDF2.errors import PdfReadError
 from PyPDF2._reader import PdfReader
+from globals import expense_map
 
 txn_start = '$ Amount'
 txn_end = 'Total fees charged'
 
 
-def generate_pdf_reader(file_name : str):
+def generate_pdf_reader(file_name: str):
     """
     This method generates an instance of PDFReader and returns it back for the provided input
     file name
@@ -41,8 +42,27 @@ def parse_transactions(reader: PdfReader):
     return split_transactions
 
 
+def categorize_transactions(transactions: list):
+    expenses = dict()
+    # expenses_new = dict()
+    for txn in transactions:
+        amount = txn.split(" ")[-1].replace(',', '')
+        if 'Payment Thank You' not in txn and txn != '' and '-' not in amount:
+            for expense_category, expense_values in expense_map.items():
+                if any(val.lower() in txn.lower() for val in expense_values):
+                    if expense_category not in expenses:
+                        # expenses_new[expense_category] = list()
+                        expenses[expense_category] = float(amount)
+                    else:
+                        expenses[expense_category] = expenses[expense_category] + float(amount)
+                    # expenses_new[expense_category].append(amount)
+                    break
+    print(expenses)
+    # print(expenses_new)
+
+
 if __name__ == '__main__':
-    input_file = 'stmt/20221224-statements-2577-.pdf'
+    input_file = 'stmt/20221124-statements-2577-.pdf'
     pdf_reader = generate_pdf_reader(input_file)
     cc_transactions = parse_transactions(pdf_reader)
-    [print(x) for x in cc_transactions]
+    categorize_transactions(cc_transactions)
