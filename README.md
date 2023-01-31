@@ -1,6 +1,8 @@
 # Chase Credit Card Statement Parser
 
-This app will parse the Chase bank Credit Card statement from PDF to Excel.
+This app will parse the Chase bank Credit Card statement from PDF to Excel. Add your credit card 
+statement in the stmt directory of this project and run the app following the steps below to 
+generate your expense report.
 
 ## Requirements
 

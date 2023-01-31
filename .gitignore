@@ -5,7 +5,7 @@
 .env
 
 # stmts
-stmt/
+stmt/*.pdf
 
 # virtualenv
 .venv

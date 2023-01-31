@@ -2,21 +2,27 @@ from PyPDF2.errors import PdfReadError
 from PyPDF2._reader import PdfReader
 from globals import expense_map
 import re
+import os
 
 txn_start = '$ Amount'
 txn_end = 'Total fees charged'
 
 
-def generate_pdf_reader(file_name: str):
+def generate_pdf_reader():
     """
     This method generates an instance of PDFReader and returns it back for the provided input
     file name
-    :param file_name: Input file name
     :return: PDFReader reader
     """
+    files = os.listdir('stmt')
+    file_name = ''
+    for f in files:
+        # Fetch the first file
+        file_name = 'stmt/'+f
+        break
     file_obj = open(file_name, 'rb')
     reader = PdfReader(file_obj, strict=False)
-    print(f'Total Pages in {file_name.split("/")[-1]}: {len(reader.pages)}')
+    print(f'File being processed {file_name.split("/")[-1]}')
     return reader
 
 
@@ -45,30 +51,40 @@ def parse_transactions(reader: PdfReader):
 
 def categorize_transactions(transactions: list):
     expenses = dict()
-    # expenses_new = dict()
+    expenses_classified = dict()
     for txn in transactions:
         # Filter transactions which have a date and no negatives i.e. payments
         if re.findall("\d+\/\d+", txn) and not re.findall("-\d+\.\d+", txn) \
                 and (re.findall("\d+\.\d+", txn) or re.findall("\.\d+", txn)):
-            amount = re.findall("\d+\.\d+", txn)
-            if not amount:
-                amount = re.findall("\.\d+", txn)
+            # Parsing the amount from txn using one of the formats as specified
+            amount = re.findall("\d+\,\d+\.\d+", txn) or re.findall("\d+\.\d+", txn) \
+                     or re.findall("\.\d+", txn)
             for expense_category, expense_values in expense_map.items():
                 if any(val.lower() in txn.lower() for val in expense_values):
                     if expense_category not in expenses:
-                        # expenses_new[expense_category] = list()
-                        expenses[expense_category] = round(float(amount[0]), 2)
+                        expenses_classified[expense_category] = list()
+                        expenses[expense_category] = round(float(amount[0].replace(',', '')), 2)
                     else:
                         expenses[expense_category] = round(expenses[expense_category]
-                                                           + float(amount[0]), 2)
-                    # expenses_new[expense_category].append(amount)
+                                                           + float(amount[0].replace(',', '')), 2)
+                    expenses_classified[expense_category].append(txn)
                     break
+    print('\n')
+    print('*'*50)
+    print('DETAILED EXPENSES')
+    print('*'*50)
+    for category, txn in expenses_classified.items():
+        print(category)
+        [print(t) for t in txn]
+    print('\n')
+    print('*' * 50)
+    print('TOTALED EXPENSES')
+    print('*' * 50)
     print(expenses)
-    # print(expenses_new)
+
 
 
 if __name__ == '__main__':
-    input_file = 'stmt/20221224-statements-2577-.pdf'
-    pdf_reader = generate_pdf_reader(input_file)
+    pdf_reader = generate_pdf_reader()
     cc_transactions = parse_transactions(pdf_reader)
     categorize_transactions(cc_transactions)
