@@ -6,6 +6,7 @@
 
 # stmts
 stmt/*.pdf
+stmt/*.txt
 
 # virtualenv
 .venv

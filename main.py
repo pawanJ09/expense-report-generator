@@ -1,3 +1,6 @@
+import traceback
+
+import PyPDF2
 from PyPDF2.errors import PdfReadError
 from PyPDF2._reader import PdfReader
 from globals import expense_map
@@ -21,31 +24,55 @@ def generate_pdf_reader():
         file_name = 'stmt/'+f
         break
     file_obj = open(file_name, 'rb')
-    reader = PdfReader(file_obj, strict=False)
+    reader = PdfReader(file_obj)
     print(f'File being processed {file_name.split("/")[-1]}')
+    print(f'Total Pages: {len(reader.pages)}')
     return reader
 
 
-def parse_transactions(reader: PdfReader):
+def generate_contents():
+    """
+    This function will read the contents of the first file from stmt directory, parse the lines
+    and return it back
+    :return: List contents
+    """
+    files = os.listdir('stmt')
+    file_name = ''
+    for f in files:
+        # Fetch the first file
+        file_name = 'stmt/' + f
+        break
+    with open(file_name, 'r') as f:
+        contents = f.readlines()
+    f.close()
+    return contents
+
+
+def parse_transactions(reader, transactions: list):
     """
     This method reads all the pages from the provided reader, extracts the text and filters
     credit card transactions before adding them to a list and returning the list of transactions
     :param reader: PdfReader object
+    :param transactions: List of string
     :return: List of transactions
     """
-    txn_found = False
     split_transactions = []
-    for page_num in range(len(pdf_reader.pages)):
-        try:
-            page_content = pdf_reader.pages[page_num]
-            transactions = page_content.extract_text()
-            if (transactions.find(txn_start) > 0 and not txn_found) or txn_found:
-                txn_found = True
-                raw_transactions = transactions[transactions.find(txn_start) + len(txn_start):
-                                                transactions.find(txn_end)]
-                split_transactions.extend(raw_transactions.splitlines())
-        except PdfReadError:
-            txn_found = False
+    if reader is not None:
+        for page_num in range(len(reader.pages)):
+            try:
+                page_content = reader.pages[page_num]
+                transactions = page_content.extract_text()
+                if transactions.find(txn_start) > 0:
+                    txn_found = True
+                    raw_transactions = transactions[transactions.find(txn_start) + len(txn_start):
+                                                    transactions.find(txn_end)]
+                    split_transactions.extend(raw_transactions.splitlines())
+            except PdfReadError as e:
+                print(f'Error when reading Page#{page_num+1}: {e}')
+                traceback.print_exc()
+    else:
+        # Return incoming transactions as the txt file is already split into lines
+        split_transactions = transactions
     return split_transactions
 
 
@@ -75,16 +102,17 @@ def categorize_transactions(transactions: list):
     print('*'*50)
     for category, txn in expenses_classified.items():
         print(category)
-        [print(t) for t in txn]
+        print(*txn)
     print('\n')
     print('*' * 50)
-    print('TOTALED EXPENSES')
+    print('TOTAL EXPENSES')
     print('*' * 50)
     print(expenses)
 
 
-
 if __name__ == '__main__':
-    pdf_reader = generate_pdf_reader()
-    cc_transactions = parse_transactions(pdf_reader)
+    # Problem with PyPDF2 since end of file cannot be determined on some pages
+    # pdf_reader = generate_pdf_reader()
+    file_contents = generate_contents()
+    cc_transactions = parse_transactions(None, file_contents)
     categorize_transactions(cc_transactions)
