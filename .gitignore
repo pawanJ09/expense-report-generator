@@ -1,7 +1,12 @@
 .idea/
+.DS_Store
 
 # dotenv
 .env
+
+# stmts
+stmt/*.pdf
+stmt/*.txt
 
 # virtualenv
 .venv
