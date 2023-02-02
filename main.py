@@ -1,11 +1,12 @@
-import traceback
-
-import PyPDF2
 from PyPDF2.errors import PdfReadError
 from PyPDF2._reader import PdfReader
 from globals import expense_map
+import matplotlib.pyplot as plt
+import numpy as np
 import re
 import os
+import traceback
+
 
 txn_start = '$ Amount'
 txn_end = 'Total fees charged'
@@ -30,7 +31,7 @@ def generate_pdf_reader():
     return reader
 
 
-def generate_contents():
+def fetch_contents():
     """
     This function will read the contents of the first file from stmt directory, parse the lines
     and return it back
@@ -76,6 +77,19 @@ def parse_transactions(reader, transactions: list):
     return split_transactions
 
 
+def plot_expenses(expenses_tot: dict):
+    """
+    This function will generate a pie chart with the provided Total expenses
+    :param expenses_tot: Dict of total expenses
+    """
+    stats_tot = np.array(list(expenses_tot.values()))
+    stats_cat = np.array(list(expenses_tot.keys()))
+    explosion = [0.1] * len(list(expenses_tot.keys()))
+    plt.pie(stats_tot, labels=stats_cat, explode=explosion, shadow=True,
+            autopct=lambda x: '{:.2f}'.format(x*stats_tot.sum()/100))
+    plt.show()
+
+
 def categorize_transactions(transactions: list):
     expenses = dict()
     expenses_classified = dict()
@@ -110,11 +124,13 @@ def categorize_transactions(transactions: list):
     print('TOTAL EXPENSES')
     print('*' * 50)
     print(expenses)
+    plot_expenses(expenses, expenses_classified)
 
 
 if __name__ == '__main__':
     # Problem with PyPDF2 since end of file cannot be determined on some pages
     # pdf_reader = generate_pdf_reader()
-    file_contents = generate_contents()
+    file_contents = fetch_contents()
     cc_transactions = parse_transactions(None, file_contents)
     categorize_transactions(cc_transactions)
+
