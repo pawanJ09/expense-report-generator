@@ -21,3 +21,7 @@ You can run the main.py program to get started. This file has the __main__ metho
 ```shell
 python3 main.py
 ```
+
+## Sample report generation
+
+![Expense Report](images/cc-stmt-parser-report.png "Sample Expense Report")
