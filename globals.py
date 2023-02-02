@@ -1,5 +1,5 @@
 expense_map = {"Groceries": ["MART", "TARGET", "JEWEL OSCO", "WALGREENS", "Market", "Patel",
-                             "Carniseria La Rosita"],
+                             "Carniseria La Rosita", "COSTCO"],
                "Utilities": ["ATT", "CITY OF CRYSTAL LAKE", "Nicor Gas", "COMED",
                              "RECYCLING", "RING", "COMCAST"],
                "Entertainment": ["Peacock", "AMC", "Netflix", "Hulu", "Bowlero"],

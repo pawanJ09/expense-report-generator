@@ -90,8 +90,10 @@ def categorize_transactions(transactions: list):
                 if any(val.lower() in txn.lower() for val in expense_values):
                     if expense_category not in expenses:
                         expenses_classified[expense_category] = list()
+                        # Replace commas for number > 999
                         expenses[expense_category] = round(float(amount[0].replace(',', '')), 2)
                     else:
+                        # Replace commas for number > 999
                         expenses[expense_category] = round(expenses[expense_category]
                                                            + float(amount[0].replace(',', '')), 2)
                     expenses_classified[expense_category].append(txn)
