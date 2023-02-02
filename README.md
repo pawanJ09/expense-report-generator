@@ -12,6 +12,10 @@ For building and running the application you need:
 
 ```shell
 pip3 install -r requirements.txt
+
+OR
+
+pip install -r requirements.txt
 ```
 
 ## Running the application locally
@@ -20,6 +24,10 @@ You can run the main.py program to get started. This file has the __main__ metho
 
 ```shell
 python3 main.py
+
+OR
+
+python main.py
 ```
 
 ## Sample report generation
