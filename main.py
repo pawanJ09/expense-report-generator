@@ -124,7 +124,7 @@ def categorize_transactions(transactions: list):
     print('TOTAL EXPENSES')
     print('*' * 50)
     print(expenses)
-    plot_expenses(expenses, expenses_classified)
+    plot_expenses(expenses)
 
 
 if __name__ == '__main__':
