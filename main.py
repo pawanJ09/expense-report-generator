@@ -92,7 +92,7 @@ def parse_transactions(reader, transactions: list):
     return split_transactions
 
 
-def plot_expenses(expenses_tot: dict, s_dates: str):
+def plot_expenses(expenses_tot: dict, s_dates: list):
     """
     This function will generate a pie chart with the provided Total expenses
     :param expenses_tot: Dict of total expenses
