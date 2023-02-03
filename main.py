@@ -8,6 +8,8 @@ import os
 import traceback
 import boto3
 import botocore
+import urllib.parse
+import json
 
 
 txn_start = '$ Amount'
@@ -34,36 +36,24 @@ def generate_pdf_reader():
     return reader
 
 
-def fetch_contents():
+def fetch_contents(bucket_name: str, file: str):
     """
-    This function will read the contents of the first file from stmt directory, parse the lines
-    and return it back
+    This function will read the contents of the file from the S3 bucket's PutObject event and
+    return it back for further processing
+    :param bucket_name: String S3 bucket name
+    :param file: String key from S3 event
     :return: List contents
     """
     contents = list()
     try:
-        bucket_name = 'cc-statements'
         s3_client = boto3.client('s3')
-        response = s3_client.list_objects_v2(Bucket=bucket_name, Prefix='stmt')
-        s3_files = response.get('Contents')
-        for f in s3_files:
-            if f['Key'].endswith('.txt'):
-                data = s3_client.get_object(Bucket=bucket_name, Key=f['Key'])
-                s3_contents = data['Body'].read().splitlines()
-                [contents.append(c.decode()) for c in s3_contents]
-                break
+        if file.endswith('.txt'):
+            data = s3_client.get_object(Bucket=bucket_name, Key=file)
+            s3_contents = data['Body'].read().splitlines()
+            # Convert byte to string
+            [contents.append(c.decode()) for c in s3_contents]
     except botocore.exceptions.ClientError as error:
-        # Try to look for statement in the statements directory
-        files = os.listdir('stmt')
-        file_name = ''
-        for f in files:
-            # Fetch the first file
-            file_name = 'stmt/' + f
-            print(f'Processing file {file_name}')
-            break
-        with open(file_name, 'r') as f:
-            contents = f.readlines()
-        f.close()
+        raise error
     return contents
 
 
@@ -177,12 +167,18 @@ def plot_expenses(expenses_tot: dict, s_dates: list):
     plt.show()
 
 
-if __name__ == '__main__':
-    # Problem with PyPDF2 since end of file cannot be determined on some pages
-    # pdf_reader = generate_pdf_reader()
-    file_contents = fetch_contents()
+def lambda_handler(event, context):
+    bucket = event['Records'][0]['s3']['bucket']['name']
+    key = urllib.parse.unquote_plus(event['Records'][0]['s3']['object']['key'], encoding='utf-8')
+    file_contents = fetch_contents(bucket, key)
     dates = parse_stmt_date(file_contents)
     cc_transactions = parse_transactions(None, file_contents)
     expenses_all = categorize_transactions(cc_transactions)
     plot_expenses(expenses_all, dates)
+
+
+if __name__ == '__main__':
+    with open('events/test-event.json') as f:
+        test_event = json.load(f)
+        lambda_handler(test_event, None)
 
