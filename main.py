@@ -78,7 +78,6 @@ def parse_transactions(reader, transactions: list):
                 page_content = reader.pages[page_num]
                 transactions = page_content.extract_text()
                 if transactions.find(txn_start) > 0:
-                    txn_found = True
                     raw_transactions = transactions[transactions.find(txn_start) + len(txn_start):
                                                     transactions.find(txn_end)]
                     split_transactions.extend(raw_transactions.splitlines())
