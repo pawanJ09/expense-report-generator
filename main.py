@@ -6,6 +6,8 @@ import numpy as np
 import re
 import os
 import traceback
+import boto3
+import botocore
 
 
 txn_start = '$ Amount'
@@ -38,16 +40,30 @@ def fetch_contents():
     and return it back
     :return: List contents
     """
-    files = os.listdir('stmt')
-    file_name = ''
-    for f in files:
-        # Fetch the first file
-        file_name = 'stmt/' + f
-        print(f'Processing file {file_name}')
-        break
-    with open(file_name, 'r') as f:
-        contents = f.readlines()
-    f.close()
+    contents = list()
+    try:
+        bucket_name = 'cc-statements'
+        s3_client = boto3.client('s3')
+        response = s3_client.list_objects_v2(Bucket=bucket_name, Prefix='stmt')
+        s3_files = response.get('Contents')
+        for f in s3_files:
+            if f['Key'].endswith('.txt'):
+                data = s3_client.get_object(Bucket=bucket_name, Key=f['Key'])
+                s3_contents = data['Body'].read().splitlines()
+                [contents.append(c.decode()) for c in s3_contents]
+                break
+    except botocore.exceptions.ClientError as error:
+        # Try to look for statement in the statements directory
+        files = os.listdir('stmt')
+        file_name = ''
+        for f in files:
+            # Fetch the first file
+            file_name = 'stmt/' + f
+            print(f'Processing file {file_name}')
+            break
+        with open(file_name, 'r') as f:
+            contents = f.readlines()
+        f.close()
     return contents
 
 
@@ -61,6 +77,7 @@ def parse_stmt_date(transactions: list):
     for txn in transactions:
         if re.findall("\d{2}\/\d{2}\/\d{2}\s\-\s\d{2}\/\d{2}\/\d{2}", txn):
             stmt_dates = re.findall("\d{2}\/\d{2}\/\d{2}\s\-\s\d{2}\/\d{2}\/\d{2}", txn)
+            print(f'Expense Report for Statement: {stmt_dates[0]}')
             return stmt_dates
 
 
@@ -88,23 +105,7 @@ def parse_transactions(reader, transactions: list):
     else:
         # Return incoming transactions as the txt file is already split into lines
         split_transactions = transactions
-        print(split_transactions)
     return split_transactions
-
-
-def plot_expenses(expenses_tot: dict, s_dates: list):
-    """
-    This function will generate a pie chart with the provided Total expenses
-    :param expenses_tot: Dict of total expenses
-    :param s_dates: String of statement date
-    """
-    stats_tot = np.array(list(expenses_tot.values()))
-    stats_cat = np.array(list(expenses_tot.keys()))
-    explosion = [0.1] * len(list(expenses_tot.keys()))
-    plt.pie(stats_tot, labels=stats_cat, explode=explosion,
-            autopct=lambda x: '{:.2f}'.format(x*stats_tot.sum()/100))
-    plt.title(f'Expense Report for Statement: {s_dates[0]}\n')
-    plt.show()
 
 
 def categorize_transactions(transactions: list):
@@ -152,13 +153,28 @@ def categorize_transactions(transactions: list):
     print('*'*50)
     for category, txn in expenses_classified.items():
         print(category)
-        print(*txn)
+        [print(t) for t in txn]
     print('\n')
     print('*' * 50)
     print('TOTAL EXPENSES')
     print('*' * 50)
     print(expenses)
     return expenses
+
+
+def plot_expenses(expenses_tot: dict, s_dates: list):
+    """
+    This function will generate a pie chart with the provided Total expenses
+    :param expenses_tot: Dict of total expenses
+    :param s_dates: String of statement date
+    """
+    stats_tot = np.array(list(expenses_tot.values()))
+    stats_cat = np.array(list(expenses_tot.keys()))
+    explosion = [0.1] * len(list(expenses_tot.keys()))
+    plt.pie(stats_tot, labels=stats_cat, explode=explosion,
+            autopct=lambda x: '{:.2f}'.format(x*stats_tot.sum()/100))
+    plt.title(f'Expense Report for Statement: {s_dates[0]}\n')
+    plt.show()
 
 
 if __name__ == '__main__':
