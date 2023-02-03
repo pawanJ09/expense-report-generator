@@ -10,6 +10,7 @@ import traceback
 
 txn_start = '$ Amount'
 txn_end = 'Total fees charged'
+misc_category = 'Miscellaneous'
 
 
 def generate_pdf_reader():
@@ -78,7 +79,6 @@ def parse_transactions(reader, transactions: list):
                 page_content = reader.pages[page_num]
                 transactions = page_content.extract_text()
                 if transactions.find(txn_start) > 0:
-                    txn_found = True
                     raw_transactions = transactions[transactions.find(txn_start) + len(txn_start):
                                                     transactions.find(txn_end)]
                     split_transactions.extend(raw_transactions.splitlines())
@@ -101,7 +101,7 @@ def plot_expenses(expenses_tot: dict, s_dates: list):
     stats_tot = np.array(list(expenses_tot.values()))
     stats_cat = np.array(list(expenses_tot.keys()))
     explosion = [0.1] * len(list(expenses_tot.keys()))
-    plt.pie(stats_tot, labels=stats_cat, explode=explosion, shadow=True,
+    plt.pie(stats_tot, labels=stats_cat, explode=explosion,
             autopct=lambda x: '{:.2f}'.format(x*stats_tot.sum()/100))
     plt.title(f'Expense Report for Statement: {s_dates[0]}\n')
     plt.show()
@@ -123,6 +123,7 @@ def categorize_transactions(transactions: list):
             # Parsing the amount from txn using one of the formats as specified
             amount = re.findall("\d+\,\d+\.\d+", txn) or re.findall("\d+\.\d+", txn) \
                      or re.findall("\.\d+", txn)
+            txn_found = False
             for expense_category, expense_values in expense_map.items():
                 if any(val.lower() in txn.lower() for val in expense_values):
                     if expense_category not in expenses:
@@ -134,7 +135,17 @@ def categorize_transactions(transactions: list):
                         expenses[expense_category] = round(expenses[expense_category]
                                                            + float(amount[0].replace(',', '')), 2)
                     expenses_classified[expense_category].append(txn)
+                    txn_found = True
                     break
+            if not txn_found:
+                if misc_category not in expenses:
+                    expenses_classified[misc_category] = list()
+                    # Replace commas for number > 999
+                    expenses[misc_category] = round(float(amount[0].replace(',', '')), 2)
+                else:
+                    expenses[misc_category] = round(expenses[misc_category] +
+                                                    float(amount[0].replace(',', '')), 2)
+                expenses_classified[misc_category].append(txn)
     print('\n')
     print('*'*50)
     print('DETAILED EXPENSES')
