@@ -7,6 +7,7 @@
 # stmts
 stmt/*.pdf
 stmt/*.txt
+results/
 
 # virtualenv
 .venv

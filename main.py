@@ -114,7 +114,8 @@ def plot_expenses(expenses_tot: dict, s_dates: list):
     plt.pie(stats_tot, labels=stats_cat, explode=explosion,
             autopct=lambda x: '{:.2f}'.format(x*stats_tot.sum()/100))
     plt.title(f'Expense Report for Statement: {s_dates[0]}\n')
-    plt.show()
+    save_img = 'results/' + s_dates[0].replace('/', '-') + '.png'
+    plt.savefig(save_img)
 
 
 def lambda_handler(event, context):
