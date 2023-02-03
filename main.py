@@ -1,11 +1,7 @@
-from PyPDF2.errors import PdfReadError
-from PyPDF2._reader import PdfReader
 from globals import expense_map
 import matplotlib.pyplot as plt
 import numpy as np
 import re
-import os
-import traceback
 import boto3
 import botocore
 import urllib.parse
@@ -15,25 +11,6 @@ import json
 txn_start = '$ Amount'
 txn_end = 'Total fees charged'
 misc_category = 'Miscellaneous'
-
-
-def generate_pdf_reader():
-    """
-    This method generates an instance of PDFReader and returns it back for the provided input
-    file name
-    :return: PDFReader reader
-    """
-    files = os.listdir('stmt')
-    file_name = ''
-    for f in files:
-        # Fetch the first file
-        file_name = 'stmt/'+f
-        break
-    file_obj = open(file_name, 'rb')
-    reader = PdfReader(file_obj)
-    print(f'File being processed {file_name.split("/")[-1]}')
-    print(f'Total Pages: {len(reader.pages)}')
-    return reader
 
 
 def fetch_contents(bucket_name: str, file: str):
@@ -69,33 +46,6 @@ def parse_stmt_date(transactions: list):
             stmt_dates = re.findall("\d{2}\/\d{2}\/\d{2}\s\-\s\d{2}\/\d{2}\/\d{2}", txn)
             print(f'Expense Report for Statement: {stmt_dates[0]}')
             return stmt_dates
-
-
-def parse_transactions(reader, transactions: list):
-    """
-    This method reads all the pages from the provided reader, extracts the text and filters
-    credit card transactions before adding them to a list and returning the list of transactions
-    :param reader: PdfReader object
-    :param transactions: List of string
-    :return: List split_transactions
-    """
-    split_transactions = []
-    if reader is not None:
-        for page_num in range(len(reader.pages)):
-            try:
-                page_content = reader.pages[page_num]
-                transactions = page_content.extract_text()
-                if transactions.find(txn_start) > 0:
-                    raw_transactions = transactions[transactions.find(txn_start) + len(txn_start):
-                                                    transactions.find(txn_end)]
-                    split_transactions.extend(raw_transactions.splitlines())
-            except PdfReadError as e:
-                print(f'Error when reading Page#{page_num+1}: {e}')
-                traceback.print_exc()
-    else:
-        # Return incoming transactions as the txt file is already split into lines
-        split_transactions = transactions
-    return split_transactions
 
 
 def categorize_transactions(transactions: list):
@@ -172,8 +122,7 @@ def lambda_handler(event, context):
     key = urllib.parse.unquote_plus(event['Records'][0]['s3']['object']['key'], encoding='utf-8')
     file_contents = fetch_contents(bucket, key)
     dates = parse_stmt_date(file_contents)
-    cc_transactions = parse_transactions(None, file_contents)
-    expenses_all = categorize_transactions(cc_transactions)
+    expenses_all = categorize_transactions(file_contents)
     plot_expenses(expenses_all, dates)
 
 
