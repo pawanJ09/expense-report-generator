@@ -34,7 +34,7 @@ jobs:
     #- name: Test with pytest
     #  run: |
     #    pytest
-    - name: Package for AWS Lambda
+    - name: Package AWS Lambda
       run: make bundle-lambda-function-zip
     - name: Configure AWS Credentials
       uses: aws-actions/configure-aws-credentials@v1
@@ -47,6 +47,7 @@ jobs:
     - name: AWS Deploy
       run: |
         aws lambda update-function-code --function-name expense-report-generator \
-        --zip-file fileb://expense-report-generator.zip \
+        --zip-file fileb://expense-report-generator.zip
+        aws lambda update-function-configuration --function-name expense-report-generator \
         --handler main.lambda_handler \
         --layers arn:aws:lambda:us-east-2:213231460839:layer:expense-report-generator-layer:1
