@@ -1,4 +1,4 @@
-from globals import expense_map
+from globals import expense_map, sender_email
 from email.mime.application import MIMEApplication
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -128,12 +128,17 @@ def send_email(expenses_tot: dict, s_dates: list):
     :param expenses_tot: Dict of total expenses
     :param s_dates: String of statement date
     """
+    ses_client = boto3.client('ses')
+    email_list_response = ses_client.list_identities(IdentityType='EmailAddress',
+                                                     NextToken='', MaxItems=100)
+    destinations = list()
+    for email in email_list_response['Identities']:
+        destinations.append(email)
     msg = MIMEMultipart()
     mail_title = f'Expense Report: {s_dates[0]}\n'
     msg["Subject"] = mail_title
-    msg["From"] = "pawan.jaiswal09@gmail.com"
-    msg["To"] = "pawan.jaiswal09@gmail.com"
-
+    msg["From"] = sender_email
+    msg["To"] = ",".join(destinations)
     # Set message body
     expenses_str = '----- Expenses Classified ----- \n'
     for k,v in expenses_tot.items():
@@ -141,22 +146,19 @@ def send_email(expenses_tot: dict, s_dates: list):
     expenses_str += '\n'
     body = MIMEText(expenses_str)
     msg.attach(body)
-
+    # Set the file as attachment
     filename = "results/report.png"
-
     with open(filename, "rb") as attachment:
         part = MIMEApplication(attachment.read())
         part.add_header("Content-Disposition",
                         "attachment",
                         filename=filename)
     msg.attach(part)
-
     # Convert message to string and send
-    ses_client = boto3.client("ses")
     response = ses_client.send_raw_email(
-        Source="pawan.jaiswal09@gmail.com",
-        Destinations=["pawan.jaiswal09@gmail.com"],
-        RawMessage={"Data": msg.as_string()}
+        Source = sender_email,
+        Destinations = destinations,
+        RawMessage = {"Data": msg.as_string()}
     )
 
 

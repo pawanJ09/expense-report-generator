@@ -11,3 +11,4 @@ expense_map = {"Groceries": ["MART", "TARGET", "JEWEL OSCO", "WALGREENS", "Marke
                "Travel": ["Frontier", "Etihad", "American", "United", "Ventra", "Metra", "Uber",
                           "Spothero", "Booking"],
                "Home": ["Home Depot", "Lowe", "Menards", "Woodlore Estates"]}
+sender_email = 'pawan.jaiswal09@gmail.com'
