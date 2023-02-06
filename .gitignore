@@ -8,6 +8,7 @@
 stmt/*.pdf
 stmt/*.txt
 results/
+*.zip
 
 # virtualenv
 .venv
