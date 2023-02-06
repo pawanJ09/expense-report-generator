@@ -9,6 +9,7 @@ import boto3
 import botocore
 import urllib.parse
 import json
+import os
 
 
 txn_start = '$ Amount'
@@ -147,12 +148,14 @@ def send_email(expenses_tot: dict, s_dates: list):
     body = MIMEText(expenses_str)
     msg.attach(body)
     # Set the file as attachment
-    filename = "results/report.png"
-    with open(filename, "rb") as attachment:
+    curr_dir = os.path.dirname(__file__)
+    report_path = '../results/report.png'
+    report_file_path = os.path.join(curr_dir, report_path)
+    with open(report_file_path, "rb") as attachment:
         part = MIMEApplication(attachment.read())
         part.add_header("Content-Disposition",
                         "attachment",
-                        filename=filename)
+                        filename=report_file_path)
     msg.attach(part)
     # Convert message to string and send
     response = ses_client.send_raw_email(
@@ -175,7 +178,10 @@ def lambda_handler(event, context):
 
 
 if __name__ == '__main__':
-    with open('events/test-sqs-event.json') as f:
+    script_dir = os.path.dirname(__file__)
+    rel_path = '../events/test-sqs-event.json'
+    abs_file_path = os.path.join(script_dir, rel_path)
+    with open(abs_file_path) as f:
         test_event = json.load(f)
         lambda_handler(test_event, None)
 
