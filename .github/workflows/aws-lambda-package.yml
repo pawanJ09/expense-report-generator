@@ -46,7 +46,7 @@ jobs:
         role-session-name: MySessionName
     - name: AWS Deploy
       run: |
-        aws lambda update-function-code --function-name expense-report-generator |
-        --zip-file fileb://expense-report-generator.zip |
-        --handler main.lambda_handler |
+        aws lambda update-function-code --function-name expense-report-generator \
+        --zip-file fileb://expense-report-generator.zip \
+        --handler main.lambda_handler \
         --layers arn:aws:lambda:us-east-2:213231460839:layer:expense-report-generator-layer:1
