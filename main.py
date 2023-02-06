@@ -1,4 +1,7 @@
 from globals import expense_map
+from email.mime.application import MIMEApplication
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 import matplotlib.pyplot as plt
 import numpy as np
 import re
@@ -53,7 +56,7 @@ def categorize_transactions(transactions: list):
     This functions takes the list of transactions, finds the lines which are valid transaction
     lines i.e. those lines that have an amount associated with it as mentioned in the regex
     :param transactions: list of string
-    :return:
+    :return: dict of expenses
     """
     expenses = dict()
     expenses_classified = dict()
@@ -114,8 +117,47 @@ def plot_expenses(expenses_tot: dict, s_dates: list):
     plt.pie(stats_tot, labels=stats_cat, explode=explosion,
             autopct=lambda x: '{:.2f}'.format(x*stats_tot.sum()/100))
     plt.title(f'Expense Report for Statement: {s_dates[0]}\n')
-    save_img = 'results/' + s_dates[0].replace('/', '-') + '.png'
+    save_img = 'results/report.png'
     plt.savefig(save_img)
+
+
+def send_email(expenses_tot: dict, s_dates: list):
+    """
+    This function will use the Amazon AWS Simple Email Service to send the email with expenses
+    and the expense pie chart
+    :param expenses_tot: Dict of total expenses
+    :param s_dates: String of statement date
+    """
+    msg = MIMEMultipart()
+    mail_title = f'Expense Report: {s_dates[0]}\n'
+    msg["Subject"] = mail_title
+    msg["From"] = "pawan.jaiswal09@gmail.com"
+    msg["To"] = "pawan.jaiswal09@gmail.com"
+
+    # Set message body
+    expenses_str = '----- Expenses Classified ----- \n'
+    for k,v in expenses_tot.items():
+        expenses_str += k + ': $' + str(v) + '\n'
+    expenses_str += '\n'
+    body = MIMEText(expenses_str)
+    msg.attach(body)
+
+    filename = "results/report.png"
+
+    with open(filename, "rb") as attachment:
+        part = MIMEApplication(attachment.read())
+        part.add_header("Content-Disposition",
+                        "attachment",
+                        filename=filename)
+    msg.attach(part)
+
+    # Convert message to string and send
+    ses_client = boto3.client("ses")
+    response = ses_client.send_raw_email(
+        Source="pawan.jaiswal09@gmail.com",
+        Destinations=["pawan.jaiswal09@gmail.com"],
+        RawMessage={"Data": msg.as_string()}
+    )
 
 
 def lambda_handler(event, context):
@@ -125,10 +167,11 @@ def lambda_handler(event, context):
     dates = parse_stmt_date(file_contents)
     expenses_all = categorize_transactions(file_contents)
     plot_expenses(expenses_all, dates)
+    send_email(expenses_all, dates)
 
 
 if __name__ == '__main__':
-    with open('events/test-event.json') as f:
+    with open('events/test-sqs-event.json') as f:
         test_event = json.load(f)
         lambda_handler(test_event, None)
 

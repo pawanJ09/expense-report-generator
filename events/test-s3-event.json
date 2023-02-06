@@ -24,7 +24,7 @@
           "ownerIdentity": {
             "principalId": "EXAMPLE"
           },
-          "arn": "arn:aws:s3:::mybucket"
+          "arn": "arn:aws:s3:::cc-statements"
         },
         "object": {
           "key": "stmt/20221224-statements-2577-.txt",
