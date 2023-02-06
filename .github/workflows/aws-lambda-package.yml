@@ -12,7 +12,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.8", "3.9"]
+        python-version: ["3.9"]
     steps:
     - name: Checkout repo
       uses: actions/checkout@v3
@@ -46,4 +46,7 @@ jobs:
         role-session-name: MySessionName
     - name: AWS Deploy
       run: |
-        aws lambda update-function-code --function-name expense-report-generator --zip-file fileb://expense-report-generator.zip
+        aws lambda update-function-code --function-name expense-report-generator |
+        --zip-file fileb://expense-report-generator.zip |
+        --handler main.lambda_handler |
+        --layers arn:aws:lambda:us-east-2:213231460839:layer:expense-report-generator-layer:1
