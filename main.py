@@ -163,8 +163,10 @@ def send_email(expenses_tot: dict, s_dates: list):
 
 
 def lambda_handler(event, context):
-    bucket = event['Records'][0]['s3']['bucket']['name']
-    key = urllib.parse.unquote_plus(event['Records'][0]['s3']['object']['key'], encoding='utf-8')
+    event_body = json.loads(event['Records'][0]['body'])
+    bucket = event_body['Records'][0]['s3']['bucket']['name']
+    key = urllib.parse.unquote_plus(event_body['Records'][0]['s3']['object']['key'],
+                                    encoding='utf-8')
     file_contents = fetch_contents(bucket, key)
     dates = parse_stmt_date(file_contents)
     expenses_all = categorize_transactions(file_contents)
