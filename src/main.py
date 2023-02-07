@@ -136,10 +136,9 @@ def send_email(expenses_tot: dict, s_dates: list):
     """
     print(f'Fetching verified identities from SES')
     ses_client = boto3.client('ses')
-    email_list_response = ses_client.list_identities(IdentityType='EmailAddress',
-                                                     NextToken='', MaxItems=100)
+    email_list_response = ses_client.list_verified_email_addresses()
     destinations = list()
-    for email in email_list_response['Identities']:
+    for email in email_list_response['VerifiedEmailAddresses']:
         destinations.append(email)
     msg = MIMEMultipart()
     mail_title = f'Expense Report: {s_dates[0]}\n'
