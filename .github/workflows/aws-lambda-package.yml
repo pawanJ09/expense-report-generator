@@ -48,6 +48,10 @@ jobs:
       run: |
         aws lambda update-function-code --function-name expense-report-generator \
         --zip-file fileb://expense-report-generator.zip
+    - name: Sleep for 90 seconds
+      uses: jakejarvis/wait-action@master
+      with:
+        time: '90s'
     - name: AWS Update Lambda
       run: |
         aws lambda update-function-configuration --function-name expense-report-generator \
