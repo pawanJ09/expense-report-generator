@@ -44,10 +44,12 @@ jobs:
         aws-region: us-east-2
         role-duration-seconds: 1200
         role-session-name: MySessionName
-    - name: AWS Deploy
+    - name: AWS Deploy Lambda
       run: |
         aws lambda update-function-code --function-name expense-report-generator \
         --zip-file fileb://expense-report-generator.zip
+    - name: AWS Update Lambda
+      run: |
         aws lambda update-function-configuration --function-name expense-report-generator \
         --handler main.lambda_handler \
         --layers arn:aws:lambda:us-east-2:770693421928:layer:Klayers-p38-matplotlib:14
