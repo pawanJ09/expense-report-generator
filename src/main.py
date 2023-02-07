@@ -57,6 +57,7 @@ def categorize_transactions(transactions: list):
     lines i.e. those lines that have an amount associated with it as mentioned in the regex
     :param transactions: list of string
     :return: dict of expenses
+    :return: dict of expenses_classified
     """
     expenses = dict()
     expenses_classified = dict()
@@ -90,19 +91,47 @@ def categorize_transactions(transactions: list):
                     expenses[misc_category] = round(expenses[misc_category] +
                                                     float(amount[0].replace(',', '')), 2)
                 expenses_classified[misc_category].append(txn)
-    print('\n')
-    print('*'*50)
-    print('DETAILED EXPENSES')
-    print('*'*50)
-    for category, txn in expenses_classified.items():
-        print(category)
-        [print(t) for t in txn]
-    print('\n')
-    print('*' * 50)
-    print('TOTAL EXPENSES')
-    print('*' * 50)
-    print(expenses)
-    return expenses
+    return expenses, expenses_classified
+
+
+def format_expenses(expenses_tot: dict, expenses_cl: dict, is_format: bool):
+    """
+    This function will print or format the expenses
+    :param expenses_tot: Dict of total expenses
+    :param expenses_cl: Dict of classified expenses
+    :param is_format: boolean to determine if print or return the formatted expenses
+    """
+    if not is_format:
+        print('\n')
+        print('*' * 50)
+        print('DETAILED EXPENSES')
+        print('*' * 50)
+        for category, txn in expenses_cl.items():
+            print(category)
+            [print(t) for t in txn]
+        print('\n')
+        print('*' * 50)
+        print('TOTAL EXPENSES')
+        print('*' * 50)
+        print(expenses_tot)
+    else:
+        formatted_expenses = '\n'
+        formatted_expenses += '*' * 20
+        formatted_expenses += 'DETAILED EXPENSES'
+        formatted_expenses += '*' * 20
+        for category, txn in expenses_cl.items():
+            formatted_expenses += f'\n{category} ==>'
+            for t in txn:
+                formatted_expenses += f'\n{t}'
+        formatted_expenses += '\n\n'
+        formatted_expenses += '*' * 20
+        formatted_expenses += 'TOTAL EXPENSES'
+        formatted_expenses += '*' * 20
+        for cat, val in expenses_tot.items():
+            formatted_expenses += f'\n{cat}: ${val}'
+        formatted_expenses += '\n'
+        print(f'Formatted expenses: {formatted_expenses}')
+        return formatted_expenses
 
 
 def plot_expenses(expenses_tot: dict, s_dates: list):
@@ -127,11 +156,12 @@ def plot_expenses(expenses_tot: dict, s_dates: list):
     print(f'Results saved to S3')
 
 
-def send_email(expenses_tot: dict, s_dates: list):
+def send_email(expenses_tot: dict, expenses_cl: dict, s_dates: list):
     """
     This function will use the Amazon AWS Simple Email Service to send the email with expenses
     and the expense pie chart
     :param expenses_tot: Dict of total expenses
+    :param expenses_cl: Dict of classified expenses
     :param s_dates: String of statement date
     """
     print(f'Fetching verified identities from SES')
@@ -146,10 +176,7 @@ def send_email(expenses_tot: dict, s_dates: list):
     msg["From"] = sender_email
     msg["To"] = ",".join(destinations)
     # Set message body
-    expenses_str = '----- Expenses Classified ----- \n'
-    for k,v in expenses_tot.items():
-        expenses_str += k + ': $' + str(v) + '\n'
-    expenses_str += '\n'
+    expenses_str = format_expenses(expenses_tot, expenses_cl, True)
     body = MIMEText(expenses_str)
     msg.attach(body)
     # Set the file as attachment
@@ -179,8 +206,8 @@ def lambda_handler(event, context):
     file_contents = fetch_contents(bucket, key)
     dates = parse_stmt_date(file_contents)
     expenses_all = categorize_transactions(file_contents)
-    plot_expenses(expenses_all, dates)
-    send_email(expenses_all, dates)
+    plot_expenses(expenses_all[0], dates)
+    send_email(expenses_all[0], expenses_all[1], dates)
 
 
 if __name__ == '__main__':
