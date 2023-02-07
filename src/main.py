@@ -1,7 +1,8 @@
-from globals import expense_map, sender_email
+from globals import expense_map, sender_email, s3_bucket, s3_results_key
 from email.mime.application import MIMEApplication
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+from io import StringIO, BytesIO
 import matplotlib.pyplot as plt
 import numpy as np
 import re
@@ -12,9 +13,8 @@ import json
 import os
 
 
-txn_start = '$ Amount'
-txn_end = 'Total fees charged'
 misc_category = 'Miscellaneous'
+s3_client = boto3.client("s3")
 
 
 def fetch_contents(bucket_name: str, file: str):
@@ -27,7 +27,6 @@ def fetch_contents(bucket_name: str, file: str):
     """
     contents = list()
     try:
-        s3_client = boto3.client('s3')
         if file.endswith('.txt'):
             data = s3_client.get_object(Bucket=bucket_name, Key=file)
             s3_contents = data['Body'].read().splitlines()
@@ -119,7 +118,13 @@ def plot_expenses(expenses_tot: dict, s_dates: list):
             autopct=lambda x: '{:.2f}'.format(x*stats_tot.sum()/100))
     plt.title(f'Expense Report for Statement: {s_dates[0]}\n')
     save_img = 'results/report.png'
-    plt.savefig(save_img)
+    img_data = BytesIO()
+    plt.savefig(img_data, format='png')
+    img_data.seek(0)
+    # put plot in S3 bucket
+    bucket = boto3.resource('s3').Bucket(s3_bucket)
+    bucket.put_object(Body=img_data, ContentType='image/png', Key=save_img)
+    print(f'Results saved to S3')
 
 
 def send_email(expenses_tot: dict, s_dates: list):
@@ -129,6 +134,7 @@ def send_email(expenses_tot: dict, s_dates: list):
     :param expenses_tot: Dict of total expenses
     :param s_dates: String of statement date
     """
+    print(f'Fetching verified identities from SES')
     ses_client = boto3.client('ses')
     email_list_response = ses_client.list_identities(IdentityType='EmailAddress',
                                                      NextToken='', MaxItems=100)
@@ -148,15 +154,16 @@ def send_email(expenses_tot: dict, s_dates: list):
     body = MIMEText(expenses_str)
     msg.attach(body)
     # Set the file as attachment
-    curr_dir = os.path.dirname(__file__)
-    report_path = '../results/report.png'
-    report_file_path = os.path.join(curr_dir, report_path)
-    with open(report_file_path, "rb") as attachment:
+    print(f'Fetching results from S3')
+    report_path = '/tmp/report.png'
+    s3_client.download_file(s3_bucket, s3_results_key, report_path)
+    with open(report_path, "rb") as attachment:
         part = MIMEApplication(attachment.read())
         part.add_header("Content-Disposition",
                         "attachment",
-                        filename=report_file_path)
+                        filename=os.path.basename(report_path))
     msg.attach(part)
+    print(f'Results fetched from S3')
     # Convert message to string and send
     response = ses_client.send_raw_email(
         Source = sender_email,
