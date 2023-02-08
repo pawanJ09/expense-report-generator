@@ -7,7 +7,7 @@ expense_map = {"Groceries": ["MART", "TARGET", "JEWEL OSCO", "WALGREENS", "Marke
                         "Annapurna", "Starbucks", "Eggholic", "Portillos", "CULVERS",
                         "El Sombrero", "Nando", "KALEIDOSCOOPS", "Wraps", "OBERWEIS",
                         "RICHARD WALKERS", "Burrito", "Sushi"],
-               "Car": ["Thornton", "STATE FARM", "Avis", "SPEEDWAY", "COSTCO GAS"],
+               "Car": ["Thornton", "STATE FARM", "Avis", "SPEEDWAY", "COSTCO GAS", "SPOTHERO"],
                "Travel": ["Frontier", "Etihad", "American", "United", "Ventra", "Metra", "Uber",
                           "Spothero", "Booking"],
                "Home": ["Home Depot", "Lowe", "Menards", "Woodlore Estates"]}
