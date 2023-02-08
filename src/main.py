@@ -142,11 +142,15 @@ def plot_expenses(expenses_tot: dict, s_dates: list):
     stats_tot = np.array(list(expenses_tot.values()))
     stats_cat = np.array(list(expenses_tot.keys()))
     explosion = [0.1] * len(list(expenses_tot.keys()))
-    plt.pie(stats_tot, labels=stats_cat, explode=explosion,
-            autopct=lambda x: '{:.2f}'.format(x*stats_tot.sum()/100))
+    labels = ['{0} - ${1:1.2f}'.format(i,j) for i,j in zip(stats_cat, stats_tot)]
+    patches, texts = plt.pie(stats_tot, labels=stats_cat, explode=explosion, startangle=0)
     plt.title(f'Expense Report for Statement: {s_dates[0]}\n')
     save_img = '/tmp/report.png'
+    plt.legend(patches, labels, bbox_to_anchor=(1.0, 0.5), loc="center right", fontsize=10,
+               bbox_transform=plt.gcf().transFigure)
+    plt.subplots_adjust(left=0.2, bottom=0.1, right=0.6)
     plt.savefig(save_img)
+    # plt.show()
     plt.clf()
     print(f'Report saved to {tmp_report_path}')
 
