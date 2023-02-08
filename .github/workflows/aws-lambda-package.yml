@@ -1,0 +1,57 @@
+name: AWS Lambda Package and Deploy
+
+on:
+  push:
+    branches: [ "main", "aws-integration" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.9"]
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v3
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v3
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        python -m pip install flake8 pytest
+        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+    - name: Lint with flake8
+      run: |
+        # stop the build if there are Python syntax errors or undefined names
+        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+        # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
+        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+    #- name: Test with pytest
+    #  run: |
+    #    pytest
+    - name: Package AWS Lambda
+      run: make bundle-lambda-function-zip
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: us-east-2
+        role-duration-seconds: 1200
+        role-session-name: MySessionName
+    - name: AWS Deploy Lambda
+      run: |
+        aws lambda update-function-code --function-name expense-report-generator \
+        --zip-file fileb://expense-report-generator.zip
+    - name: Sleep for 60 seconds
+      uses: jakejarvis/wait-action@master
+      with:
+        time: '60s'
+    - name: AWS Update Lambda
+      run: |
+        aws lambda update-function-configuration --function-name expense-report-generator \
+        --handler main.lambda_handler \
+        --layers arn:aws:lambda:us-east-2:770693421928:layer:Klayers-p38-matplotlib:14
