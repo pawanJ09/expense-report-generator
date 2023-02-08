@@ -1,8 +1,7 @@
-from globals import expense_map, sender_email, s3_bucket, s3_results_key
+from globals import expense_map, sender_email, tmp_report_path
 from email.mime.application import MIMEApplication
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from io import StringIO, BytesIO
 import matplotlib.pyplot as plt
 import numpy as np
 import re
@@ -146,14 +145,10 @@ def plot_expenses(expenses_tot: dict, s_dates: list):
     plt.pie(stats_tot, labels=stats_cat, explode=explosion,
             autopct=lambda x: '{:.2f}'.format(x*stats_tot.sum()/100))
     plt.title(f'Expense Report for Statement: {s_dates[0]}\n')
-    save_img = 'results/report.png'
-    img_data = BytesIO()
-    plt.savefig(img_data, format='png')
-    img_data.seek(0)
-    # put plot in S3 bucket
-    bucket = boto3.resource('s3').Bucket(s3_bucket)
-    bucket.put_object(Body=img_data, ContentType='image/png', Key=save_img)
-    print(f'Results saved to S3')
+    save_img = '/tmp/report.png'
+    plt.savefig(save_img)
+    plt.clf()
+    print(f'Report saved to {tmp_report_path}')
 
 
 def send_email(expenses_tot: dict, expenses_cl: dict, s_dates: list):
@@ -180,16 +175,14 @@ def send_email(expenses_tot: dict, expenses_cl: dict, s_dates: list):
     body = MIMEText(expenses_str)
     msg.attach(body)
     # Set the file as attachment
-    print(f'Fetching results from S3')
-    report_path = '/tmp/report.png'
-    s3_client.download_file(s3_bucket, s3_results_key, report_path)
-    with open(report_path, "rb") as attachment:
+    print(f'Fetching report from {tmp_report_path}')
+    with open(tmp_report_path, "rb") as attachment:
         part = MIMEApplication(attachment.read())
         part.add_header("Content-Disposition",
                         "attachment",
-                        filename=os.path.basename(report_path))
+                        filename=os.path.basename(tmp_report_path))
     msg.attach(part)
-    print(f'Results fetched from S3')
+    print(f'Report fetched from {tmp_report_path}')
     # Convert message to string and send
     response = ses_client.send_raw_email(
         Source = sender_email,
