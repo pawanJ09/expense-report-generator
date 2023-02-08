@@ -2,7 +2,7 @@ name: AWS Lambda Package and Deploy
 
 on:
   push:
-    branches: [ "main", "aws-integration" ]
+    branches: [ "main" ]
 
 jobs:
   build:
