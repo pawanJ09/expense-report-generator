@@ -46,10 +46,10 @@ jobs:
       run: |
         aws lambda update-function-code --function-name expense-report-generator \
         --zip-file fileb://expense-report-generator.zip
-    - name: Sleep for 30 seconds
+    - name: Sleep for 20 seconds
       uses: jakejarvis/wait-action@master
       with:
-        time: '30s'
+        time: '20s'
     - name: AWS Lambda Update
       run: |
         aws lambda update-function-configuration --function-name expense-report-generator \
@@ -63,5 +63,5 @@ jobs:
         --cli-binary-format raw-in-base64-out /dev/stdout | grep "errorMessage")
         # Exit if error received from Lambda invocation
         echo $error_message
-        if [ ! -z "$error_message" ]; then echo "Error returned from Lambda"; exit 1;\
+        if [ ! -z "$error_message" ]; then echo "Error returned from Lambda"; exit 1; \
         else echo "Success returned from Lambda"; fi
