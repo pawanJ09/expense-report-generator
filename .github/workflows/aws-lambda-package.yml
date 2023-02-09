@@ -63,5 +63,5 @@ jobs:
         --cli-binary-format raw-in-base64-out /dev/stdout | python -m  json.tool | grep "StatusCode")
         # Exit if status code from lambda is not 202
         echo $result
-        if [$result != *"202"*]; then echo "Error returned from Lambda"; exit 1; \
+        if $result != *"202"*; then echo "Error returned from Lambda"; exit 1; \
         else echo "Success returned from Lambda"; fi
