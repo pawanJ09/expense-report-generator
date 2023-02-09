@@ -195,16 +195,20 @@ def send_email(expenses_tot: dict, expenses_cl: dict, s_dates: list):
 
 
 def lambda_handler(event, context):
-    event_body = json.loads(event['Records'][0]['body'])
-    print(f'Incoming SQS Message: {event_body}')
-    bucket = event_body['Records'][0]['s3']['bucket']['name']
-    key = urllib.parse.unquote_plus(event_body['Records'][0]['s3']['object']['key'],
-                                    encoding='utf-8')
-    file_contents = fetch_contents(bucket, key)
-    dates = parse_stmt_date(file_contents)
-    expenses_all = categorize_transactions(file_contents)
-    plot_expenses(expenses_all[0], dates)
-    send_email(expenses_all[0], expenses_all[1], dates)
+    try:
+        event_body = json.loads(event['Records'][0]['body'])
+        print(f'Incoming SQS Message: {event_body}')
+        bucket = event_body['Records'][0]['s3']['bucket']['name']
+        key = urllib.parse.unquote_plus(event_body['Records'][0]['s3']['object']['key'],
+                                        encoding='utf-8')
+        file_contents = fetch_contents(bucket, key)
+        dates = parse_stmt_date(file_contents)
+        expenses_all = categorize_transactions(file_contents)
+        plot_expenses(expenses_all[0], dates)
+        send_email(expenses_all[0], expenses_all[1], dates)
+    except Exception as e:
+        msg = '\nProcessing error. Check Cloudwatch logs.'
+        raise Exception(msg)
 
 
 if __name__ == '__main__':
