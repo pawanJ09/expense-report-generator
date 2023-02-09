@@ -129,7 +129,6 @@ def format_expenses(expenses_tot: dict, expenses_cl: dict, is_format: bool):
         for cat, val in expenses_tot.items():
             formatted_expenses += f'\n{cat}: ${val}'
         formatted_expenses += '\n'
-        print(f'Formatted expenses: {formatted_expenses}')
         return formatted_expenses
 
 
@@ -197,6 +196,7 @@ def send_email(expenses_tot: dict, expenses_cl: dict, s_dates: list):
 
 def lambda_handler(event, context):
     event_body = json.loads(event['Records'][0]['body'])
+    print(f'Incoming SQS Message: {event_body}')
     bucket = event_body['Records'][0]['s3']['bucket']['name']
     key = urllib.parse.unquote_plus(event_body['Records'][0]['s3']['object']['key'],
                                     encoding='utf-8')
