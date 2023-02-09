@@ -30,6 +30,13 @@ OR
 python ./src/main.py
 ```
 
+## Trigger AWS Lambda with Test event from cli
+
+```shell
+aws lambda invoke --function-name expense-report-generator --invocation-type RequestResponse \
+--payload file://events/test-sqs-event.json cli-binary-format raw-in-base64-out /dev/stdout
+```
+
 ## Sample report generation
 
 ![Expense Report](images/cc-stmt-parser-report.png "Sample Expense Report")
