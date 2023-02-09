@@ -63,5 +63,5 @@ jobs:
         --cli-binary-format raw-in-base64-out /dev/stdout | grep "errorMessage")
         # Exit if error received from Lambda invocation
         echo $error_message
-    - name: Job Passed
-      run: if [ ! -z "$error_message" ]; then exit 1; fi
+        if [ -n "$error_message" ]; then echo "Success returned from Lambda"; exit 0; \
+        else echo "Error returned from Lambda"; exit 1; fi
