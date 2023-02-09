@@ -13,4 +13,4 @@ expense_map = {"Groceries": ["MART", "TARGET", "JEWEL OSCO", "WALGREENS", "Marke
                "Home": ["Home Depot", "Lowe", "Menards", "Woodlore Estates"]}
 sender_email = 'pawan.jaiswal09@gmail.com'
 s3_bucket = 'cc-statements'
-s3_results_key = 'results/report.png'
+tmp_report_path = '/tmp/report.png'
