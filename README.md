@@ -1,3 +1,5 @@
+[![AWS Lambda Package, Deploy and Test](https://github.com/pawanJ09/expense-report-generator/actions/workflows/aws-lambda-package.yml/badge.svg)](https://github.com/pawanJ09/expense-report-generator/actions/workflows/aws-lambda-package.yml)
+
 # Expense Report Generator
 
 This app will parse your Credit Card statement from txt format and categorize the expenses. Add 
