@@ -1,12 +1,16 @@
 #!/bin/bash
 
-# AWS CLI v1 command
+# AWS Version check
+aws_version=$(aws --version)
+echo "$aws_version"
+
+# AWS CLI v2 command
 error_message=$(aws lambda invoke --function-name expense-report-generator \
 --invocation-type RequestResponse --payload file://events/test-sqs-event.json \
-/tmp/lambda-response.txt | grep "FunctionError")
-  # Exit if error received from Lambda invocation
+--cli-binary-format raw-in-base64-out /tmp/lambda-response.txt | grep "FunctionError")
 echo "$error_message"
 
+# Exit if error received from Lambda invocation
 if [ -z "$error_message" ]
 then
   echo "Success returned from Lambda"
