@@ -1,4 +1,4 @@
-from globals import expense_map, sender_email, tmp_report_path
+from globals import sender_email, tmp_report_path
 from email.mime.application import MIMEApplication
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -50,6 +50,18 @@ def parse_stmt_date(transactions: list):
             return stmt_dates
 
 
+def fetch_expense_map():
+    """
+    This function fetches the expense categories from DynamoDB
+    :return: 'Items' from DynamoDB response
+    """
+    dynamodb = boto3.resource('dynamodb')
+    table = dynamodb.Table('expense-categories')
+    resp = table.scan(ProjectionExpression="category, val")
+    # print(resp.get('Items', []))
+    return resp.get('Items', [])
+
+
 def categorize_transactions(transactions: list):
     """
     This functions takes the list of transactions, finds the lines which are valid transaction
@@ -68,7 +80,10 @@ def categorize_transactions(transactions: list):
             amount = re.findall("\d+\,\d+\.\d+", txn) or re.findall("\d+\.\d+", txn) \
                      or re.findall("\.\d+", txn)
             txn_found = False
-            for expense_category, expense_values in expense_map.items():
+            fem = fetch_expense_map()
+            for em in fem:
+                expense_category = em['category']
+                expense_values = em['val']
                 if any(val.lower() in txn.lower() for val in expense_values):
                     if expense_category not in expenses:
                         expenses_classified[expense_category] = list()
