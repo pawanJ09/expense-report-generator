@@ -57,7 +57,7 @@ jobs:
       run: |
         aws lambda update-function-configuration --function-name expense-report-generator \
         --handler main.lambda_handler \
-        --layers arn:aws:lambda:us-east-2:770693421928:layer:Klayers-p38-matplotlib:14
+        --layers arn:aws:lambda:us-east-2:770693421928:layer:Klayers-p38-matplotlib:14 arn:aws:lambda:us-east-2:770693421928:layer:Klayers-p39-requests:10
     - name: AWS Lambda Test
       run: |
         chmod +x ./test.sh

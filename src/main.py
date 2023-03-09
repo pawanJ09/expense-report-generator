@@ -1,4 +1,4 @@
-from globals import sender_email, tmp_report_path
+from globals import sender_email, tmp_report_path, expense_categories_fetcher_agw
 from email.mime.application import MIMEApplication
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -10,6 +10,7 @@ import botocore
 import urllib.parse
 import json
 import os
+import requests
 
 
 misc_category = 'Miscellaneous'
@@ -52,14 +53,11 @@ def parse_stmt_date(transactions: list):
 
 def fetch_expense_map():
     """
-    This function fetches the expense categories from DynamoDB
-    :return: 'Items' from DynamoDB response
+    This function fetches the expense categories from expense-categories-fetcher API
+    :return: 'Items' from API response
     """
-    dynamodb = boto3.resource('dynamodb')
-    table = dynamodb.Table('expense-categories')
-    resp = table.scan(ProjectionExpression="category, val")
-    # print(resp.get('Items', []))
-    return resp.get('Items', [])
+    resp = requests.get(expense_categories_fetcher_agw)
+    return resp.json()
 
 
 def categorize_transactions(transactions: list):
@@ -72,6 +70,7 @@ def categorize_transactions(transactions: list):
     """
     expenses = dict()
     expenses_classified = dict()
+    fem = fetch_expense_map()
     for txn in transactions:
         # Filter transactions which have a date and no negatives i.e. payments
         if re.findall("\d+\/\d+", txn) and not re.findall("-\d+\.\d+", txn) \
@@ -80,7 +79,6 @@ def categorize_transactions(transactions: list):
             amount = re.findall("\d+\,\d+\.\d+", txn) or re.findall("\d+\.\d+", txn) \
                      or re.findall("\.\d+", txn)
             txn_found = False
-            fem = fetch_expense_map()
             for em in fem:
                 expense_category = em['category']
                 expense_values = em['val']
