@@ -1,4 +1,4 @@
-from globals import sender_email, tmp_report_path, expense_categories_fetcher_agw
+from globals import sender_email, tmp_report_path, expense_categories_fetcher_agw, expense_email_verifier_agw
 from email.mime.application import MIMEApplication
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -167,44 +167,48 @@ def plot_expenses(expenses_tot: dict, s_dates: list):
     print(f'Report saved to {tmp_report_path}')
 
 
-def send_email(expenses_tot: dict, expenses_cl: dict, s_dates: list):
+def send_email(expenses_tot: dict, expenses_cl: dict, s_dates: list, u_email):
     """
     This function will use the Amazon AWS Simple Email Service to send the email with expenses
     and the expense pie chart
     :param expenses_tot: Dict of total expenses
     :param expenses_cl: Dict of classified expenses
     :param s_dates: String of statement date
+    :param u_email: String of user email
     """
-    print(f'Fetching verified identities from SES')
-    ses_client = boto3.client('ses')
-    email_list_response = ses_client.list_verified_email_addresses()
-    destinations = list()
-    for email in email_list_response['VerifiedEmailAddresses']:
-        destinations.append(email)
-    msg = MIMEMultipart()
-    mail_title = f'Expense Report: {s_dates[0]}\n'
-    msg["Subject"] = mail_title
-    msg["From"] = sender_email
-    msg["To"] = ",".join(destinations)
-    # Set message body
-    expenses_str = format_expenses(expenses_tot, expenses_cl, True)
-    body = MIMEText(expenses_str)
-    msg.attach(body)
-    # Set the file as attachment
-    print(f'Fetching report from {tmp_report_path}')
-    with open(tmp_report_path, "rb") as attachment:
-        part = MIMEApplication(attachment.read())
-        part.add_header("Content-Disposition",
-                        "attachment",
-                        filename=os.path.basename(tmp_report_path))
-    msg.attach(part)
-    print(f'Report fetched from {tmp_report_path}')
-    # Convert message to string and send
-    response = ses_client.send_raw_email(
-        Source = sender_email,
-        Destinations = destinations,
-        RawMessage = {"Data": msg.as_string()}
-    )
+    print(f'Fetching verified email from expense-email-verifier service')
+    email_verifier_req = {"user-email": str(u_email)}
+    email_verifier_resp = requests.post(url=expense_email_verifier_agw,
+                                        data=json.dumps(email_verifier_req))
+    if email_verifier_resp.status_code == 200:
+        destinations = list()
+        destinations.append(u_email)
+        print(f'Email verified and proceeding with email generation')
+        msg = MIMEMultipart()
+        mail_title = f'Expense Report: {s_dates[0]}\n'
+        msg["Subject"] = mail_title
+        msg["From"] = sender_email
+        msg["To"] = ",".join(destinations)
+        # Set message body
+        expenses_str = format_expenses(expenses_tot, expenses_cl, True)
+        body = MIMEText(expenses_str)
+        msg.attach(body)
+        # Set the file as attachment
+        print(f'Fetching report from {tmp_report_path}')
+        with open(tmp_report_path, "rb") as attachment:
+            part = MIMEApplication(attachment.read())
+            part.add_header("Content-Disposition",
+                            "attachment",
+                            filename=os.path.basename(tmp_report_path))
+        msg.attach(part)
+        print(f'Report fetched from {tmp_report_path}')
+        # Convert message to string and send
+        ses_client = boto3.client('ses')
+        response = ses_client.send_raw_email(
+            Source = sender_email,
+            Destinations = destinations,
+            RawMessage = {"Data": msg.as_string()}
+        )
 
 
 def lambda_handler(event, context):
@@ -214,11 +218,13 @@ def lambda_handler(event, context):
         bucket = event_body['Records'][0]['s3']['bucket']['name']
         key = urllib.parse.unquote_plus(event_body['Records'][0]['s3']['object']['key'],
                                         encoding='utf-8')
+        user_email = key.split('/')[1]
+        print(f'Generating report for user email: {user_email}')
         file_contents = fetch_contents(bucket, key)
         dates = parse_stmt_date(file_contents)
         expenses_all = categorize_transactions(file_contents)
         plot_expenses(expenses_all[0], dates)
-        send_email(expenses_all[0], expenses_all[1], dates)
+        send_email(expenses_all[0], expenses_all[1], dates, user_email)
     except Exception as e:
         msg = '\nProcessing error. Check Cloudwatch logs.'
         raise Exception(msg)
