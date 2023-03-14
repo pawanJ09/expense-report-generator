@@ -42,3 +42,8 @@ aws lambda invoke --function-name expense-report-generator --invocation-type Req
 ## Sample report generation
 
 ![Expense Report](images/cc-stmt-parser-report.png "Sample Expense Report")
+
+
+## Architecture
+
+![Architecture Diagram](images/expense-report-architecture.png "Expense Report Architecture Diagram")
